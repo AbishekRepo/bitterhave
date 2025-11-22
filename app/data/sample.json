@@ -1,0 +1,48 @@
+{
+  "success": true,
+  "data": {
+    "success": true,
+    "data": {
+      "id": "gen-1763834341-7AF1wwCmBKlm677uxojg",
+      "provider": "xAI",
+      "model": "x-ai/grok-4.1-fast:free",
+      "object": "chat.completion",
+      "created": 1763834341,
+      "choices": [
+        {
+          "logprobs": null,
+          "finish_reason": "stop",
+          "native_finish_reason": "completed",
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "### Useful Hooks in React\n\nReact Hooks are functions that let you use state and other React features in functional components. Introduced in React 16.8, they make code more reusable and composable. Below is a list of the **most useful built-in hooks**, grouped by category, with brief explanations, common use cases, and examples. I'll focus on the essentials first, then advanced ones.\n\n#### 1. **Core State & Lifecycle Hooks** (Used in ~90% of components)\n- **`useState`**  \n  Manages local component state.  \n  *Use case*: Forms, toggles, counters.  \n  ```jsx\n  const [count, setCount] = useState(0);\n  ```\n  \n- **`useEffect`**  \n  Handles side effects (e.g., data fetching, subscriptions, DOM manipulation). Runs after render.  \n  *Use case*: API calls, timers. Cleanup with return function.  \n  ```jsx\n  useEffect(() => {\n    const timer = setInterval(() => setCount(count + 1), 1000);\n    return () => clearInterval(timer); // Cleanup\n  }, [count]); // Dependency array\n  ```\n\n- **`useContext`**  \n  Accesses context values without prop drilling.  \n  *Use case*: Themes, auth, global state.  \n  ```jsx\n  const theme = useContext(ThemeContext);\n  ```\n\n#### 2. **Performance & Optimization Hooks**\n- **`useCallback`**  \n  Memoizes callback functions to prevent unnecessary re-renders.  \n  *Use case*: Passing callbacks to child components.  \n  ```jsx\n  const handleClick = useCallback(() => {\n    setCount(count + 1);\n  }, [count]);\n  ```\n\n- **`useMemo`**  \n  Memoizes expensive calculations.  \n  *Use case*: Computed values like filtering large arrays.  \n  ```jsx\n  const expensiveValue = useMemo(() => {\n    return items.filter(item => item.active);\n  }, [items]);\n  ```\n\n- **`useRef`**  \n  Creates mutable refs (doesn't trigger re-renders).  \n  *Use case*: DOM access, storing previous values, intervals.  \n  ```jsx\n  const inputRef = useRef(null);\n  useEffect(() => {\n    inputRef.current.focus();\n  }, []);\n  ```\n\n#### 3. **Advanced State Management**\n- **`useReducer`**  \n  Manages complex state logic (like Redux). Alternative to `useState`.  \n  *Use case*: Multi-step forms, games.  \n  ```jsx\n  const [state, dispatch] = useReducer(reducer, initialState);\n  ```\n\n#### 4. **Less Common but Powerful Hooks**\n- **`useLayoutEffect`**  \n  Like `useEffect`, but runs synchronously after DOM mutations (before browser paint).  \n  *Use case*: Measuring DOM elements, animations.\n\n- **`useImperativeHandle`** (with `forwardRef`)  \n  Customizes ref exposure for parent components.  \n  *Use case*: Imperative APIs in libraries.\n\n- **`useDebugValue`**  \n  Displays custom labels in React DevTools for custom hooks.  \n  *Use case*: Debugging custom hooks.\n\n- **`useId`** (React 18+)  \n  Generates unique IDs for accessibility.  \n  *Use case*: Form labels.\n\n- **`useTransition`** & **`useDeferredValue`** (React 18+)  \n  Prioritizes UI updates for better perceived performance.  \n  *Use case*: Search inputs, large lists.\n\n#### Custom Hooks (Pro Tip)\nBuild your own by composing built-ins (e.g., `useFetch`). Prefix with `use`.  \n```jsx\nfunction useFetch(url) {\n  const [data, setData] = useState(null);\n  useEffect(() => {\n    fetch(url).then(res => res.json()).then(setData);\n  }, [url]);\n  return data;\n}\n```\n\n#### Quick Reference Table\n| Hook            | Purpose                  | Triggers Re-render? | Dependencies? |\n|-----------------|--------------------------|---------------------|---------------|\n| `useState`     | State                    | Yes                | N/A          |\n| `useEffect`    | Side effects             | No                 | Yes          |\n| `useContext`   | Global state             | Yes (on change)    | N/A          |\n| `useReducer`   | Complex state            | Yes                | N/A          |\n| `useCallback`  | Memoize functions        | No                 | Yes          |\n| `useMemo`      | Memoize values           | No                 | Yes          |\n| `useRef`       | Mutable refs             | No                 | N/A          |\n\n#### Tips for Effective Use\n- **Rules of Hooks**: Always call at top-level (no loops/conditions). Use ESLint plugin: `eslint-plugin-react-hooks`.\n- **Performance**: Use dependency arrays correctly to avoid infinite loops.\n- **When to Use**: Prefer hooks over classes. For global state, consider Zustand/Jotai over Context.\n- **Your Code Snippet**: The line `const { error uploadError } = await` looks like a destructuring error. Fix it to `const { error, uploadError } = await somePromise();` (add comma).\n\nFor full docs: [React Hooks Reference](https://react.dev/reference/react). If you have a specific use case or code to debug, share more! 🚀",
+            "refusal": null,
+            "reasoning": null,
+            "reasoning_details": [
+              {
+                "id": "rs_2415f958-24c9-d99e-f0d3-5b13279beefb",
+                "format": "xai-responses-v1",
+                "index": 0,
+                "type": "reasoning.encrypted",
+                "data": "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"
+              }
+            ]
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 432,
+        "completion_tokens": 1497,
+        "total_tokens": 1929,
+        "completion_tokens_details": {
+          "reasoning_tokens": 390
+        }
+      }
+    },
+    "filename": "screenshot_20251122_232857.png",
+    "timestamp": "2025-11-22T23:28:58.103101",
+    "imageId": "2ea56b42-b2a4-455d-8fd7-cb99990039e6",
+    "extractedText": "U ntitled\r\nEdit\r\nwhat are the useful hooks in React\r\nconst { error uploadError } = await\r\nFile\r\n22-11-2025\r\nView\r\nx\r\n€93\r\nwhat are the useful hooks in React?\r\nLn 1, Col 36\r\n35 characters\r\nPlain text\r\n100%\r\nWindows (CRLF)\r\nENG\r\nIN\r\nUTE-8\r\n4\r\n23:28"
+  }
+}
