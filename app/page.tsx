@@ -51,11 +51,11 @@ export default function LandingPage() {
                     <p className="text-xl text-gray-400 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
                         Paste any Job Description + your interview date → get a complete, day-wise preparation roadmap in under 30 sec.
                     </p>
-                    <Link href="/dashboard">
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-lg rounded-full transition-all shadow-lg hover:shadow-blue-500/25 font-bold tracking-wide">
+                    <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-lg rounded-full transition-all shadow-lg hover:shadow-blue-500/25 font-bold tracking-wide">
+                        <Link href="/dashboard">
                             GET STARTED
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </div>
                 <div className="hidden lg:block flex-1 relative w-full aspect-[4/3] lg:aspect-square max-h-[500px]">
                     <div className="relative w-full h-full">
