@@ -19,7 +19,7 @@ export default function LandingPage() {
                         Paste any Job Description + your interview date → get a complete, day-wise preparation roadmap in under 30 sec.
                     </p>
                     <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-7 text-lg rounded-full transition-all shadow-lg hover:shadow-blue-500/25 font-bold tracking-wide">
-                        <Link href="/dashboard">
+                        <Link href="/service">
                             GET STARTED
                         </Link>
                     </Button>
@@ -159,7 +159,7 @@ export default function LandingPage() {
                             <div className="text-gray-100 font-bold">1000 credits (best value)</div>
                         </div>
 
-                        <Link href="/dashboard" className="inline-block px-8 py-3 bg-gray-800 hover:bg-gray-700 text-gray-100 font-bold rounded-lg border border-gray-600 transition-all">
+                        <Link href="/service" className="inline-block px-8 py-3 bg-gray-800 hover:bg-gray-700 text-gray-100 font-bold rounded-lg border border-gray-600 transition-all">
                             Buy Credits
                         </Link>
                     </div>
