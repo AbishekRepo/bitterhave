@@ -1,46 +1,13 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Nav from "./components/Nav";
 
 export default function LandingPage() {
-    const [isVisible, setIsVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
-
-    useEffect(() => {
-        const controlNavbar = () => {
-            if (typeof window !== 'undefined') {
-                if (window.scrollY > lastScrollY && window.scrollY > 50) {
-                    setIsVisible(false);
-                } else {
-                    setIsVisible(true);
-                }
-                setLastScrollY(window.scrollY);
-            }
-        };
-
-        window.addEventListener('scroll', controlNavbar);
-
-        return () => {
-            window.removeEventListener('scroll', controlNavbar);
-        };
-    }, [lastScrollY]);
-
     return (
         <div className="min-h-screen text-gray-100 font-sans selection:bg-purple-500 selection:text-white bg-[#0a0a0a]">
-            <nav className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${isVisible ? 'translate-y-0' : '-translate-y-full'} bg-[#141414]/95 backdrop-blur-sm border-b border-white/5`}>
-                <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-                    <div className="text-xl font-bold tracking-tight font-serif">Bitterhave</div>
-                    <div className="flex gap-4">
-                        <Link href="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-                            Login
-                        </Link>
-                    </div>
-                </div>
-            </nav>
+            <Nav />
 
             <section className="container mx-auto pl-6 pb-5 pt-10 flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
                 <div className="flex-1 text-center lg:text-left z-10">
@@ -205,4 +172,3 @@ export default function LandingPage() {
         </div>
     );
 }
-
