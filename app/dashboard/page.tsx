@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ResponseDisplay from "../components/ResponseDisplay";
+import ResponseDisplay from "../components/feature/ResponseDisplay";
 
 export default function Home() {
   const [response, setResponse] = useState<string | null>(null);
