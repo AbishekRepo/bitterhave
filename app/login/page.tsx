@@ -3,9 +3,9 @@ import { signInWithGoogle } from "@/lib/actions/auth";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ message: string }>;
+  searchParams: Promise<{ message: string; next?: string }>;
 }) {
-  const { message } = await searchParams;
+  const { message, next } = await searchParams;
 
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2 mx-auto min-h-screen">
@@ -13,6 +13,7 @@ export default async function LoginPage({
         <h1 className="text-2xl font-bold text-center mb-6">
           Welcome to Bitterhave
         </h1>
+        {next && <input type="hidden" name="redirectTo" value={next} />}
         <div className="relative my-4">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-foreground/20"></span>

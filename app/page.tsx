@@ -1,11 +1,5 @@
 import Image from "next/image";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import ServicesSection from "@/app/components/home/ServicesSection";
 import Nav from "./components/home/Nav";
 import HeroButtons from "@/app/components/home/HeroButtons";
 
@@ -57,123 +51,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Main Content - Our Services */}
-      <section id="services" className="container mx-auto px-6 pb-8">
-        <div className="text-center mb-6">
-          <h2 className="text-3xl md:text-4xl font-bold mb-2 font-serif text-white">
-            Our Features
-          </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Two powerful ways to master your interview preparation.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4 max-w-6xl mx-auto">
-          {/* Service 1: Roadmap Generator */}
-          <Card className="bg-[#1a1a1a] border-gray-800 text-gray-100 hover:border-gray-700 transition-colors cursor-pointer">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-2xl font-serif text-blue-400">
-                Roadmap Generator
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                A completely free tool to structure your prep.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative pl-6 border-l border-gray-800 space-y-6 ml-2">
-                {/* Step 1 */}
-                <div className="relative">
-                  <div className="absolute -left-[29px] top-1.5 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-[#1a1a1a]"></div>
-                  <h3 className="text-lg font-bold mb-1 text-gray-200">
-                    Paste the Job Description
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    Add your resume for deeper personalization.
-                  </p>
-                </div>
-                {/* Step 2 */}
-                <div className="relative">
-                  <div className="absolute -left-[29px] top-1.5 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-[#1a1a1a]"></div>
-                  <h3 className="text-lg font-bold mb-1 text-gray-200">
-                    Pick Your Interview Date
-                  </h3>
-                  <p className="text-gray-400 text-sm">
-                    We calculate your available study time.
-                  </p>
-                </div>
-                {/* Step 3 */}
-                <div className="relative">
-                  <div className="absolute -left-[29px] top-1.5 w-3 h-3 rounded-full bg-blue-600 ring-4 ring-[#1a1a1a]"></div>
-                  <h3 className="text-lg font-bold mb-1 text-gray-200">
-                    Get Your Roadmap
-                  </h3>
-                  <ul className="space-y-1 text-sm">
-                    <li className="flex items-center gap-2 text-gray-300">
-                      <span className="text-green-400">✓</span> Personalized
-                      roadmap
-                    </li>
-                    <li className="flex items-center gap-2 text-gray-300">
-                      <span className="text-green-400">✓</span> Daily study plan
-                    </li>
-                    <li className="flex items-center gap-2 text-gray-300">
-                      <span className="text-green-400">✓</span> Printable PDF
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Service 2: AI Co-Pilot */}
-          <Card className="bg-[#1a1a1a] border-gray-800 text-gray-100 hover:border-gray-700 transition-colors cursor-pointer">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-2xl font-serif text-purple-400">
-                AI Interview Co-Pilot
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Premium tools powered by credits.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2 mb-4">
-                {[
-                  "AI Interview Helper (.py tool)",
-                  "Press a hotkey anywhere",
-                  "Screenshot → get instant answer",
-                  "Unlimited AI mock interviews",
-                  "Deep skill-gap report",
-                  "Priority support",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="text-purple-500 mt-0.5">✓</span>
-                    <span className="text-gray-200">{item}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="bg-[#242424] rounded-lg p-3 border border-gray-700 space-y-2">
-                <div className="flex justify-between items-center text-sm p-1.5 rounded hover:bg-[#2a2a2a] transition-colors">
-                  <span className="font-medium text-gray-300">
-                    Starter Pack
-                  </span>
-                  <span className="text-gray-500">100 credits</span>
-                </div>
-                <div className="flex justify-between items-center text-sm bg-[#2a2a2a] p-1.5 rounded border border-gray-600">
-                  <span className="font-bold text-white">Regular Pack</span>
-                  <span className="text-gray-400">500 credits</span>
-                </div>
-                <div className="flex justify-between items-center text-sm p-1.5 rounded hover:bg-[#2a2a2a] transition-colors">
-                  <span className="font-medium text-gray-300">Pro Pack</span>
-                  <span className="text-gray-500">1000 credits</span>
-                </div>
-                <p className="text-center text-xs text-gray-500 pt-1">
-                  Credits never expire.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
+      <ServicesSection />
       <footer className="container mx-auto px-6 py-8 text-center text-gray-600 text-sm">
         © {new Date().getFullYear()} Bitterhave. All rights reserved.
       </footer>

@@ -70,15 +70,22 @@ export const useAuthStore = create<AuthState>((set) => ({
     },
 
     logout: async () => {
+        // Optimistic update
+        set({
+            user: null,
+            profile: null,
+            isLoggedIn: false
+        });
+
         try {
             await logoutAction();
-            set({
-                user: null,
-                profile: null,
-                isLoggedIn: false
-            });
         } catch (error) {
-            console.error('Error logging out:', error);
+            // Only log if it's not a redirect error (redirects serve as control flow)
+            // In Next.js, redirects throw an error. We want that error to bubble up 
+            // or at least we shouldn't suppress the redirect behavior. 
+            // However, since we can't easily import isRedirectError here without adding dependencies,
+            // we will let the error bubble up so Next.js handles the redirect.
+            throw error;
         }
     },
 }));
