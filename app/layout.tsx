@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -29,6 +30,7 @@ export default function RootLayout({
         className={`${playfair.variable} ${lato.variable} antialiased`}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );
