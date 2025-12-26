@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Download,
   CheckCircle2,
@@ -12,6 +12,7 @@ import {
   Terminal,
   AlertCircle,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -60,12 +61,84 @@ function CheckItem({ text, checked, onToggle }: CheckItemProps) {
   );
 }
 
+function SessionStatus({ userId }: { userId: string }) {
+  const [status, setStatus] = useState<"checking" | "ready" | "inactive">(
+    "checking"
+  );
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | undefined = undefined;
+
+    const checkSession = async () => {
+      try {
+        const response = await fetch(
+          `/api/live-copilot/status?userId=${userId}`
+        );
+        const data = await response.json();
+
+        if (data.isActive) {
+          setStatus("ready");
+          toast.success("🎉 Session Connected!", {
+            description:
+              "Your Live Interview Helper is now active and ready to assist.",
+            duration: 5000,
+          });
+          if (intervalId) clearInterval(intervalId);
+        } else {
+          setStatus("inactive");
+        }
+      } catch {
+        setStatus("inactive");
+      }
+    };
+
+    checkSession();
+    intervalId = setInterval(checkSession, 3000);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [userId]);
+
+  return (
+    <div
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
+        status === "ready"
+          ? "bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400"
+          : status === "checking"
+          ? "bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400"
+          : "bg-muted border-border text-muted-foreground"
+      }`}
+    >
+      {status === "ready" && (
+        <>
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-medium">Session Active</span>
+        </>
+      )}
+      {status === "checking" && (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span className="text-sm font-medium">Waiting for connection...</span>
+        </>
+      )}
+      {status === "inactive" && (
+        <>
+          <AlertCircle className="w-4 h-4" />
+          <span className="text-sm font-medium">Run the script to connect</span>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function LiveCopilotPage() {
   const { profile } = useAuthStore();
   const sparks = profile?.sparks || 0;
   const [hotkey, setHotkey] = useState("Ctrl + Shift + X");
   const [recording, setRecording] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [checks, setChecks] = useState({
     python: false,
     verified: false,
@@ -91,6 +164,96 @@ export default function LiveCopilotPage() {
     navigator.clipboard.writeText("python live_helper.py");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOneClickSetup = async () => {
+    if (!profile?.id) {
+      toast.error("Authentication required", {
+        description: "Please log in to download the setup script.",
+      });
+      return;
+    }
+
+    setDownloading(true);
+    const isWindows = navigator.platform.toLowerCase().includes("win");
+    const isMac = navigator.platform.toLowerCase().includes("mac");
+
+    try {
+      const response = await fetch("/api/live-copilot/download-setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: profile.id,
+          hotkey: hotkey,
+          platform: isWindows ? "windows" : isMac ? "macos" : "linux",
+        }),
+      });
+
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = isWindows ? "setup-live-helper.bat" : "setup-live-helper.sh";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("✅ Setup script downloaded!", {
+        description: isWindows
+          ? "Double-click the .bat file to install everything automatically"
+          : "Run in terminal: chmod +x setup-live-helper.sh && ./setup-live-helper.sh",
+        duration: 8000,
+      });
+    } catch {
+      toast.error("Download failed", {
+        description: "Please try the manual setup option below",
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleManualDownload = async () => {
+    if (!profile?.id) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setDownloading(true);
+    try {
+      const response = await fetch("/api/live-copilot/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: profile.id,
+          hotkey: hotkey,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "live_helper.py";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Downloaded live_helper.py", {
+        description:
+          "Install dependencies with: pip install keyboard pillow pystray requests",
+      });
+    } catch {
+      toast.error("Download failed");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -196,7 +359,6 @@ export default function LiveCopilotPage() {
             </div>
 
             <div className="rounded-lg overflow-hidden shadow-2xl border border-border/50 bg-[#0c0c0c] font-mono text-sm ring-1 ring-white/10">
-              {/* Windows Title Bar */}
               <div className="bg-[#1f1f1f] px-3 py-1.5 flex items-center justify-between select-none border-b border-white/5">
                 <div className="flex items-center gap-2">
                   <Terminal className="w-3.5 h-3.5 text-white" />
@@ -217,7 +379,6 @@ export default function LiveCopilotPage() {
                 </div>
               </div>
 
-              {/* Console Content */}
               <div className="p-4 space-y-1 font-mono text-xs md:text-sm text-[#cccccc]">
                 <div className="mb-4 text-xs opacity-70">
                   Microsoft Windows [Version 10.0.19045.3693]
@@ -244,7 +405,7 @@ export default function LiveCopilotPage() {
           </div>
         </section>
 
-        {/* Steps 2-5 Container */}
+        {/* Steps 2-6 Container */}
         <div className="relative">
           {!checks.python || !checks.verified ? (
             <div
@@ -252,11 +413,7 @@ export default function LiveCopilotPage() {
               onClick={() => {
                 toast.error("Please complete the system requirements first", {
                   description:
-                    "Please check you installed python and verified checks to proceed.",
-                  action: {
-                    label: "Got it",
-                    onClick: () => console.log("Toast closed"),
-                  },
+                    "Check that you have Python installed and verified.",
                 });
               }}
             />
@@ -265,8 +422,8 @@ export default function LiveCopilotPage() {
           <div
             className={
               !checks.python || !checks.verified
-                ? "opacity-40 pointer-events-none select-none transition-opacity duration-300"
-                : "transition-opacity duration-300"
+                ? "opacity-40 pointer-events-none select-none"
+                : ""
             }
           >
             {/* Step 2: Hotkey Configuration */}
@@ -302,35 +459,191 @@ export default function LiveCopilotPage() {
                 </div>
                 <p className="text-sm text-muted-foreground mt-3">
                   Choose a unique key combination that won&apos;t conflict with
-                  other applications during your interview.
+                  other applications.
                 </p>
               </div>
             </section>
 
-            {/* Step 3: Download */}
+            {/* Step 3: One-Click Setup */}
             <section className="mb-12">
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
                   3
                 </div>
-                <h3 className="text-xl font-semibold">
-                  Download Helper Script
-                </h3>
+                <h3 className="text-xl font-semibold">Setup & Download</h3>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6">
-                <button className="flex items-center gap-3 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors">
-                  <Download className="w-5 h-5" />
-                  Download live_helper.py
-                </button>
-                <p className="text-sm text-muted-foreground mt-4">
-                  This Python script includes embedded authentication tokens for
-                  your account. Store it securely.
-                </p>
+              <div className="bg-card border border-border rounded-lg p-6 space-y-6">
+                {/* One-Click Setup - Recommended */}
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-lg p-6">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold mb-1">
+                        ⭐ Recommended: One-Click Setup
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Download a setup script that automatically installs all
+                        dependencies and starts the helper.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleOneClickSetup}
+                    disabled={downloading}
+                    className="w-full flex items-center justify-center gap-3 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5" />
+                        Download One-Click Setup
+                      </>
+                    )}
+                  </button>
+
+                  <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+                    <p className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                      <span>
+                        Automatically installs all required dependencies
+                      </span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                      <span>Downloads and configures the helper script</span>
+                    </p>
+                    <p className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                      <span>Starts the session automatically</span>
+                    </p>
+                  </div>
+
+                  <div className="mt-4 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                    <p className="text-xs text-muted-foreground">
+                      <strong className="text-foreground">
+                        Security Note:
+                      </strong>{" "}
+                      This script contains your personal authentication
+                      credentials. Do not share it with others.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">
+                      Or manual setup
+                    </span>
+                  </div>
+                </div>
+
+                {/* Manual Setup Option */}
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    If the automatic setup doesn&apos;t work (antivirus
+                    blocking), use manual setup:
+                  </p>
+
+                  <div className="space-y-3">
+                    <div className="bg-card border border-border rounded-lg overflow-hidden font-mono text-sm">
+                      <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground font-sans">
+                          Step 1: Install dependencies
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              "pip install keyboard pillow pystray requests"
+                            );
+                            toast.success("Copied!");
+                          }}
+                          className="p-1 hover:bg-background rounded"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="p-4">
+                        <span className="text-muted-foreground">$</span> pip
+                        install keyboard pillow pystray requests
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Step 2: Download Python script
+                      </span>
+                      <button
+                        onClick={handleManualDownload}
+                        disabled={downloading}
+                        className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download live_helper.py
+                      </button>
+                    </div>
+                  </div>
+
+                  <details className="group">
+                    <summary className="flex items-center gap-2 text-sm text-primary cursor-pointer hover:text-primary/80">
+                      <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
+                      What do these dependencies do?
+                    </summary>
+                    <div className="mt-3 ml-6 space-y-2 text-sm text-muted-foreground">
+                      <p className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>
+                          <code className="px-1 py-0.5 bg-muted rounded text-xs">
+                            keyboard
+                          </code>{" "}
+                          - Captures hotkey presses
+                        </span>
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>
+                          <code className="px-1 py-0.5 bg-muted rounded text-xs">
+                            pillow
+                          </code>{" "}
+                          - Takes screenshots
+                        </span>
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>
+                          <code className="px-1 py-0.5 bg-muted rounded text-xs">
+                            pystray
+                          </code>{" "}
+                          - System tray icon
+                        </span>
+                      </p>
+                      <p className="flex items-start gap-2">
+                        <span className="text-primary">•</span>
+                        <span>
+                          <code className="px-1 py-0.5 bg-muted rounded text-xs">
+                            requests
+                          </code>{" "}
+                          - API communication
+                        </span>
+                      </p>
+                    </div>
+                  </details>
+                </div>
               </div>
             </section>
 
-            {/* Step 4: Execution */}
+            {/* Step 4: Start Helper */}
             <section className="mb-12">
               <div className="flex items-center gap-3 mb-6">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
@@ -339,35 +652,68 @@ export default function LiveCopilotPage() {
                 <h3 className="text-xl font-semibold">Start the Helper</h3>
               </div>
 
-              <div className="bg-card border border-border rounded-lg overflow-hidden font-mono text-sm">
-                <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-sans">
-                    Command
-                  </span>
-                  <button
-                    onClick={copyCommand}
-                    className="p-1 hover:bg-background rounded text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {copied ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                <div className="p-4 space-y-3">
-                  <div>
-                    <span className="text-muted-foreground">$</span> python
-                    live_helper.py
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    Initializing... Done
-                    <br />
-                    <span className="text-green-600 dark:text-green-500">
-                      ✓ Active - Listening for {hotkey}
+              <div className="space-y-4">
+                <div className="bg-card border border-border rounded-lg overflow-hidden font-mono text-sm">
+                  <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground font-sans">
+                      For One-Click Setup
                     </span>
                   </div>
+                  <div className="p-4 text-muted-foreground">
+                    <p className="mb-2">
+                      Windows:{" "}
+                      <span className="text-foreground">
+                        Double-click setup-live-helper.bat
+                      </span>
+                    </p>
+                    <p>
+                      Mac/Linux:{" "}
+                      <span className="text-foreground">
+                        Run ./setup-live-helper.sh
+                      </span>
+                    </p>
+                  </div>
                 </div>
+
+                <div className="bg-card border border-border rounded-lg overflow-hidden font-mono text-sm">
+                  <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground font-sans">
+                      For Manual Setup
+                    </span>
+                    <button
+                      onClick={copyCommand}
+                      className="p-1 hover:bg-background rounded"
+                    >
+                      {copied ? (
+                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div>
+                      <span className="text-muted-foreground">$</span> python
+                      live_helper.py
+                    </div>
+                    <div className="text-muted-foreground text-xs">
+                      Initializing... Done
+                      <br />
+                      <span className="text-green-600 dark:text-green-500">
+                        ✓ Active - Listening for {hotkey}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {profile?.id && (
+                  <div className="bg-card border border-border rounded-lg p-4">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Connection Status:
+                    </p>
+                    <SessionStatus userId={profile.id} />
+                  </div>
+                )}
               </div>
             </section>
 
@@ -421,14 +767,7 @@ export default function LiveCopilotPage() {
           <button
             onClick={() => {
               if (!checks.python || !checks.verified) {
-                toast.error("Please complete the system requirements first", {
-                  description:
-                    "Please check you installed python and verified checks to proceed.",
-                  action: {
-                    label: "Got it",
-                    onClick: () => console.log("Toast closed"),
-                  },
-                });
+                toast.error("Please complete the system requirements first");
                 return;
               }
             }}
