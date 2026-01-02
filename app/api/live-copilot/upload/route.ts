@@ -123,6 +123,7 @@ export async function POST(req: Request) {
       }
 
       const data = await response.json();
+      console.log("OpenRouter response:", JSON.stringify(data));
       aiResponseText = data.choices?.[0]?.message?.content || "No response generated.";
 
     } catch (aiError) {

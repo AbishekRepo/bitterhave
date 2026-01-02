@@ -6,16 +6,16 @@ import {
   CheckCircle2,
   Sparkles,
   Copy,
-  ChevronRight,
   Monitor,
   Smartphone,
-  Terminal,
-  AlertCircle,
   ExternalLink,
   ChevronDown,
+  X,
+  QrCode,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { QRCodeSVG } from "qrcode.react";
 
 import { useAuthStore } from "@/lib/store/authStore";
 import { toast } from "sonner";
@@ -83,6 +83,7 @@ export default function LiveCopilotPage() {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showSessionModal, setShowSessionModal] = useState(false);
   const [checks, setChecks] = useState({
     python: false,
     verified: false,
@@ -164,8 +165,20 @@ export default function LiveCopilotPage() {
       return;
     }
 
-    // Navigate to session page
-    router.push(`/service/live-copilot/session/${sessionId}`);
+    // Show the session modal with QR code
+    setShowSessionModal(true);
+  };
+
+  const getSessionUrl = () => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/service/live-copilot/session/${sessionId}`;
+    }
+    return `/service/live-copilot/session/${sessionId}`;
+  };
+
+  const copySessionLink = () => {
+    navigator.clipboard.writeText(getSessionUrl());
+    toast.success("Link copied to clipboard!");
   };
 
   return (
@@ -199,56 +212,42 @@ export default function LiveCopilotPage() {
           </p>
         </div>
 
-        {/* Introduction */}
-        <section className="mb-12">
-          <div className="bg-card border border-border rounded-lg p-8">
-            <h2 className="text-2xl font-semibold mb-3">Setup Instructions</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              Follow these steps to configure your Live Interview Helper. This
-              tool captures screenshots on demand and provides AI-powered
-              responses in real-time.
-            </p>
-            <div className="bg-muted/50 border border-border rounded-lg p-4 text-sm text-muted-foreground">
-              <strong className="text-foreground">Note:</strong> The downloaded
-              file is uniquely generated for your account with embedded
-              authentication. No manual configuration required.
-            </div>
-          </div>
-        </section>
+        {/* Quick Info Banner */}
+        <div className="bg-primary/5 border border-primary/20 rounded-lg px-4 py-3 mb-8 flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            Your script will be auto-configured with your account credentials.
+          </p>
+        </div>
 
         {/* Step 1: System Requirements */}
-        <section className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
+        <section className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
               1
             </div>
-            <h3 className="text-xl font-semibold">System Requirements</h3>
+            <h3 className="text-xl font-semibold">Verify Python</h3>
           </div>
 
-          <div className="bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6 flex gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="text-muted-foreground mb-2">
-                If you have Python installed on your system, please manually
-                check the boxes below to proceed. Otherwise, download and
-                install Python from the link below:
+          <div className="bg-card border border-border rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+              <p className="text-sm text-muted-foreground flex-1">
+                Python 3.9+ required.{" "}
+                <a
+                  href="https://www.python.org/downloads/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                >
+                  Download Python
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </p>
-              <a
-                href="https://www.python.org/downloads/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline font-medium inline-flex items-center gap-1"
-              >
-                https://www.python.org/downloads/
-                <ExternalLink className="w-3 h-3" />
-              </a>
             </div>
-          </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <CheckItem
-                text="Python 3.9 or higher installed"
+                text="Python installed"
                 checked={checks.python}
                 onToggle={() =>
                   setChecks({ ...checks, python: !checks.python })
@@ -258,7 +257,7 @@ export default function LiveCopilotPage() {
                 text={
                   <>
                     Verified via{" "}
-                    <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+                    <code className="px-1 py-0.5 bg-muted rounded text-xs font-mono">
                       python --version
                     </code>
                   </>
@@ -268,51 +267,6 @@ export default function LiveCopilotPage() {
                   setChecks({ ...checks, verified: !checks.verified })
                 }
               />
-            </div>
-
-            <div className="rounded-lg overflow-hidden shadow-2xl border border-border/50 bg-[#0c0c0c] font-mono text-sm ring-1 ring-white/10">
-              <div className="bg-[#1f1f1f] px-3 py-1.5 flex items-center justify-between select-none border-b border-white/5">
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-3.5 h-3.5 text-white" />
-                  <span className="text-xs text-white font-sans">
-                    Command Prompt
-                  </span>
-                </div>
-                <div className="flex gap-4 text-white/40">
-                  <span className="hover:text-white cursor-pointer px-1">
-                    _
-                  </span>
-                  <span className="hover:text-white cursor-pointer px-1">
-                    □
-                  </span>
-                  <span className="hover:text-white hover:bg-red-600 px-2 -mr-3 transition-colors cursor-pointer">
-                    ×
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-1 font-mono text-xs md:text-sm text-[#cccccc]">
-                <div className="mb-4 text-xs opacity-70">
-                  Microsoft Windows [Version 10.0.19045.3693]
-                  <br />
-                  (c) Microsoft Corporation. All rights reserved.
-                </div>
-
-                <div className="text-green-400/80 mb-2 select-none">
-                  REM Check if python is installed:
-                </div>
-
-                <div>
-                  <span className="select-none">C:\Users\You&gt;</span>
-                  <span className="text-white ml-1">python --version</span>
-                </div>
-                <div className="mb-3 pl-0.5">Python 3.11.4</div>
-
-                <div>
-                  <span className="select-none">C:\Users\You&gt;</span>
-                  <span className="animate-pulse bg-white/50 inline-block w-2 h-4 ml-1 align-middle"></span>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -339,34 +293,27 @@ export default function LiveCopilotPage() {
             }
           >
             {/* Step 2: Hotkey Configuration */}
-            <section className="mb-12">
-              <div className="flex items-center gap-3 mb-6">
+            <section className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
                   2
                 </div>
-                <h3 className="text-xl font-semibold">
-                  Configure Activation Hotkey
-                </h3>
+                <h3 className="text-xl font-semibold">Select Hotkey</h3>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6">
-                <label className="block text-sm font-medium text-muted-foreground mb-3">
-                  Keyboard Shortcut
-                </label>
-
-                {/* Custom Dropdown */}
+              <div className="bg-card border border-border rounded-lg p-4">
                 <div ref={dropdownRef} className="relative">
                   <button
                     type="button"
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="w-full p-4 text-left text-base font-medium rounded-lg border-2 border-border bg-background hover:border-primary/50 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer flex items-center justify-between"
+                    className="w-full p-3 text-left text-sm font-medium rounded-lg border border-border bg-background hover:border-primary/50 focus:border-primary focus:outline-none transition-all cursor-pointer flex items-center justify-between"
                   >
                     <span>{hotkey}</span>
-                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-2 bg-background border-2 border-border rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
                       {hotkeyOptions.map((option) => (
                         <button
                           key={option.value}
@@ -375,152 +322,89 @@ export default function LiveCopilotPage() {
                             setHotkey(option.value);
                             setIsDropdownOpen(false);
                           }}
-                          className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0 ${hotkey === option.value ? 'bg-primary/5' : ''
-                            }`}
+                          className={`w-full px-3 py-2 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0 text-sm ${hotkey === option.value ? 'bg-primary/5' : ''}`}
                         >
-                          <div className="flex flex-col gap-1">
-                            <span className="text-base font-medium text-foreground">
-                              {option.label}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {option.description}
-                            </span>
-                          </div>
+                          {option.label}
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-
-                <p className="text-sm text-muted-foreground mt-3">
-                  Choose a key combination from the safe options above. Default is Ctrl + Alt + Shift + A.
-                </p>
               </div>
             </section>
 
             {/* Step 3: Download */}
-            <section className="mb-12">
-              <div className="flex items-center gap-3 mb-6">
+            <section className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
                   3
                 </div>
-                <h3 className="text-xl font-semibold">Download & Install</h3>
+                <h3 className="text-xl font-semibold">Download Script</h3>
               </div>
 
-              <div className="bg-card border border-border rounded-lg p-6 space-y-6">
-                {/* Install dependencies */}
-                <div className="space-y-3">
-                  <div className="bg-card border border-border rounded-lg overflow-hidden font-mono text-sm">
-                    <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground font-sans">
-                        Step 1: Install dependencies
+              <div className="bg-card border border-border rounded-lg p-5 space-y-4">
+                {/* Download button - prominent */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">Get your personalized script</p>
+                    {sessionId && (
+                      <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Session ready
                       </span>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            "pip install keyboard pillow pystray requests"
-                          );
-                          toast.success("Copied!");
-                        }}
-                        className="p-1 hover:bg-background rounded"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="p-4">
-                      <span className="text-muted-foreground">$</span> pip
-                      install keyboard pillow pystray requests
-                    </div>
+                    )}
                   </div>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Step 2: Download Python script
-                    </span>
-                    <button
-                      onClick={handleDownload}
-                      disabled={downloading}
-                      className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
-                    >
-                      <Download className="w-4 h-4" />
-                      {downloading ? "Downloading..." : "Download live_helper.py"}
-                    </button>
-                  </div>
-
-                  {sessionId && (
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-600 dark:text-green-400">
-                        Script downloaded! Session created.
-                      </span>
-                    </div>
-                  )}
+                  <button
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 font-medium"
+                  >
+                    <Download className="w-4 h-4" />
+                    {downloading ? "Downloading..." : "Download Script"}
+                  </button>
                 </div>
 
-                <details className="group">
-                  <summary className="flex items-center gap-2 text-sm text-primary cursor-pointer hover:text-primary/80">
-                    <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
-                    What do these dependencies do?
-                  </summary>
-                  <div className="mt-3 ml-6 space-y-2 text-sm text-muted-foreground">
-                    <p className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>
-                        <code className="px-1 py-0.5 bg-muted rounded text-xs">
-                          keyboard
-                        </code>{" "}
-                        - Captures hotkey presses
-                      </span>
-                    </p>
-                    <p className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>
-                        <code className="px-1 py-0.5 bg-muted rounded text-xs">
-                          pillow
-                        </code>{" "}
-                        - Takes screenshots
-                      </span>
-                    </p>
-                    <p className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>
-                        <code className="px-1 py-0.5 bg-muted rounded text-xs">
-                          pystray
-                        </code>{" "}
-                        - System tray icon
-                      </span>
-                    </p>
-                    <p className="flex items-start gap-2">
-                      <span className="text-primary">•</span>
-                      <span>
-                        <code className="px-1 py-0.5 bg-muted rounded text-xs">
-                          requests
-                        </code>{" "}
-                        - API communication
-                      </span>
-                    </p>
+                {/* Dependencies - compact */}
+                <div className="pt-3 border-t border-border">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-1">Install dependencies first:</p>
+                      <code className="text-xs font-mono bg-muted px-2 py-1 rounded block truncate">
+                        pip install keyboard pillow pystray requests
+                      </code>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText("pip install keyboard pillow pystray requests");
+                        toast.success("Copied!");
+                      }}
+                      className="p-2 hover:bg-muted rounded-lg transition-colors shrink-0"
+                      title="Copy command"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
                   </div>
-                </details>
+                </div>
               </div>
             </section>
 
-            {/* Step 4: Start Helper */}
-            <section className="mb-12">
-              <div className="flex items-center gap-3 mb-6">
+            {/* Step 4: Run Script */}
+            <section className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
                   4
                 </div>
-                <h3 className="text-xl font-semibold">Start the Helper</h3>
+                <h3 className="text-xl font-semibold">Run Script</h3>
               </div>
 
-              <div className="bg-card border border-border rounded-lg overflow-hidden font-mono text-sm">
-                <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground font-sans">
-                    Run the script
-                  </span>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <code className="text-sm font-mono bg-muted px-3 py-2 rounded flex-1">
+                    python live_helper.py
+                  </code>
                   <button
                     onClick={copyCommand}
-                    className="p-1 hover:bg-background rounded"
+                    className="p-2 hover:bg-muted rounded-lg transition-colors"
                   >
                     {copied ? (
                       <CheckCircle2 className="w-4 h-4 text-green-600" />
@@ -529,58 +413,37 @@ export default function LiveCopilotPage() {
                     )}
                   </button>
                 </div>
-                <div className="p-4 space-y-3">
-                  <div>
-                    <span className="text-muted-foreground">$</span> python
-                    live_helper.py
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    Initializing... Done
-                    <br />
-                    <span className="text-green-600 dark:text-green-500">
-                      ✓ Active - Listening for {hotkey}
-                    </span>
-                  </div>
-                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">{hotkey}</kbd> to capture
+                </p>
               </div>
             </section>
 
-            {/* Step 5: Output Method */}
-            <section className="mb-12">
-              <div className="flex items-center gap-3 mb-6">
+            {/* Step 5: Connect Session */}
+            <section className="mb-8">
+              <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
                   5
                 </div>
-                <h3 className="text-xl font-semibold">View Responses</h3>
+                <h3 className="text-xl font-semibold">Connect Session</h3>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-card border border-border rounded-lg p-6 text-left">
-                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-4">
-                    <Monitor className="w-6 h-6 text-foreground" />
+              <div className="bg-card border border-border rounded-lg p-5">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Smartphone className="w-5 h-5 text-primary" />
                   </div>
-                  <h4 className="text-lg font-semibold mb-2">
-                    Terminal Output
-                  </h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    AI responses are displayed directly in the terminal where the script runs.
-                  </p>
-                  <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-                    Hotkey:{" "}
-                    <span className="text-primary font-semibold">{hotkey}</span>
+                  <div className="flex-1">
+                    <h4 className="text-base font-semibold">View on Mobile</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Scan QR code or open link on your phone
+                    </p>
                   </div>
-                </div>
-
-                <div className="bg-card border border-border rounded-lg p-6 text-left">
-                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-4">
-                    <Smartphone className="w-6 h-6 text-foreground" />
-                  </div>
-                  <h4 className="text-lg font-semibold mb-2">Web Dashboard</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    View responses on any device. Click &quot;Connect Session&quot; below to open.
-                  </p>
-                  <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-                    Auto-refresh enabled
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted text-muted-foreground text-xs font-medium rounded-md">
+                      <Monitor className="w-3 h-3" />
+                      Desktop: Soon
+                    </span>
                   </div>
                 </div>
               </div>
@@ -599,7 +462,7 @@ export default function LiveCopilotPage() {
               }`}
           >
             Connect Live Session
-            <ChevronRight className="w-5 h-5" />
+            →
           </button>
         </div>
 
@@ -609,6 +472,84 @@ export default function LiveCopilotPage() {
           </p>
         )}
       </main>
+
+      {/* Session Modal with QR Code */}
+      {showSessionModal && sessionId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowSessionModal(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 animate-in fade-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowSessionModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+
+            {/* Header */}
+            <div className="text-center mb-6">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <QrCode className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold">Connect Your Session</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Scan the QR code with your phone to view responses
+              </p>
+            </div>
+
+            {/* QR Code */}
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-white rounded-xl shadow-inner">
+                <QRCodeSVG
+                  value={getSessionUrl()}
+                  size={180}
+                  level="H"
+                  includeMargin={false}
+                />
+              </div>
+            </div>
+
+            {/* Session Link */}
+            <div className="mb-6">
+              <label className="block text-xs font-medium text-muted-foreground mb-2">
+                Session Link
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm font-mono text-muted-foreground truncate">
+                  {getSessionUrl()}
+                </div>
+                <button
+                  onClick={copySessionLink}
+                  className="p-2 rounded-lg border border-border hover:bg-muted transition-colors"
+                  title="Copy link"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Continue in Browser Button */}
+            <div className="space-y-3">
+              <button
+                onClick={() => router.push(`/service/live-copilot/session/${sessionId}`)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Continue in Browser
+              </button>
+              <p className="text-center text-xs text-muted-foreground">
+                Or open the link on your mobile device
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
