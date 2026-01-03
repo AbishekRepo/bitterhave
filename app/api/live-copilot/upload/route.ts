@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     // Use order + limit instead of .single() to avoid "Cannot coerce" error
     const { data: sessions, error: sessionError } = await supabase
       .from("live_copilot_sessions")
-      .select("id, api_key")
+      .select("id, api_key, user_id")
       .eq("api_key", apiKey)
       .order("created_at", { ascending: false })
       .limit(1);
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
 
     // 5. Call OpenRouter API
     const visionPrompt = `You are an expert interview assistant analyzing a screenshot.
-    Analyze this screenshot and provide helpful assistance concisely.`;
+    Analyze this screenshot and provide helpful assistance concisely. if there is no text in the screenshot, respond with "No text found."`;
 
     let aiResponseText: string = "";
 
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          "model": "google/gemma-3-4b-it:free",
+          "model": "nvidia/nemotron-nano-12b-v2-vl:free",
           "messages": [
             {
               "role": "user",
@@ -146,7 +146,31 @@ export async function POST(req: Request) {
       console.error("Insert error:", insertError);
     }
 
-    // 7. Return Response
+    // 7. Decrement sparks from user (3 sparks for copilot)
+    if (session.user_id) {
+      // First get current sparks
+      const { data: userData } = await supabase
+        .from("users")
+        .select("sparks")
+        .eq("id", session.user_id)
+        .single();
+
+      if (userData && userData.sparks > 0) {
+        const newSparks = Math.max(0, (userData.sparks || 0) - 3);
+        const { error: sparksError } = await supabase
+          .from("users")
+          .update({ sparks: newSparks })
+          .eq("id", session.user_id);
+
+        if (sparksError) {
+          console.error("Failed to decrement sparks:", sparksError);
+        } else {
+          console.log(`✅ Decremented 3 sparks for user ${session.user_id}. New balance: ${newSparks}`);
+        }
+      }
+    }
+
+    // 8. Return Response
     return Response.json(
       {
         success: true,

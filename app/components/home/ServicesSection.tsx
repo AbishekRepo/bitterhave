@@ -36,7 +36,7 @@ export default function ServicesSection() {
             <div className="grid md:grid-cols-2 gap-4 max-w-6xl mx-auto">
                 {/* Service 1: Roadmap Generator */}
                 <Card
-                    onClick={() => handleNavigation("/service/roadmap-generator")}
+                    onClick={() => handleNavigation("/service/roadmap")}
                     className="bg-[#1a1a1a] border-gray-800 text-gray-100 hover:border-gray-700 transition-colors cursor-pointer"
                 >
                     <CardHeader className="pb-2">

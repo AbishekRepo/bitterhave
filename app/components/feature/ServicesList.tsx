@@ -1,8 +1,27 @@
+"use client";
+
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
+import { useAuthStore } from "@/lib/store/authStore";
 
 export default function ServicesList() {
+    const router = useRouter();
+    const { isLoggedIn } = useAuthStore();
+
+    const handleRoadmapClick = () => {
+        if (isLoggedIn) {
+            router.push("/service/roadmap");
+        } else {
+            router.push("/login?next=/service/roadmap");
+        }
+    };
+
+    const handleCopilotClick = () => {
+        router.push("/service/live-copilot");
+    };
+
     return (
         <div className="w-full">
             <div className="text-center mb-4">
@@ -21,9 +40,12 @@ export default function ServicesList() {
                 </div>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto mb-12 cursor-pointer">
+            <div className="grid lg:grid-cols-2 gap-6 max-w-5xl mx-auto mb-12">
                 {/* Service 1: Roadmap Generator */}
-                <Card className="group relative bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-gray-800 text-gray-100 hover:border-blue-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1 overflow-hidden">
+                <Card
+                    onClick={handleRoadmapClick}
+                    className="group relative bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-gray-800 text-gray-100 hover:border-blue-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1 overflow-hidden cursor-pointer"
+                >
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <CardHeader className="pb-3 relative z-10">
                         <CardTitle className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
@@ -51,7 +73,10 @@ export default function ServicesList() {
                 </Card>
 
                 {/* Service 2: AI Co-Pilot */}
-                <Card className="group relative bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-gray-800 text-gray-100 hover:border-blue-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1 overflow-hidden">
+                <Card
+                    onClick={handleCopilotClick}
+                    className="group relative bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border-2 border-gray-800 text-gray-100 hover:border-blue-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)] hover:-translate-y-1 overflow-hidden cursor-pointer"
+                >
                     {/* Premium Badge */}
                     <div className="absolute top-3 right-3 z-20">
                         <div className="relative">
