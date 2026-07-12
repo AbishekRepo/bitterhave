@@ -26,7 +26,7 @@ export async function POST(req) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "x-ai/grok-4.1-fast:free",
+          model: "openai/gpt-oss-120b:free",
           messages: [
             {
               role: "user",
@@ -38,6 +38,14 @@ export async function POST(req) {
     );
 
     const data = await response.json();
+
+    if (!response.ok) {
+      console.error("OpenRouter API Error:", data);
+      return Response.json(
+        { success: false, error: data.error || "Unknown API error" },
+        { status: response.status }
+      );
+    }
 
     return Response.json(
       {
