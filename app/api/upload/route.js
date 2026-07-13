@@ -1,3 +1,5 @@
+import { updateStatus, isBusy } from "@/app/lib/status";
+
 export const runtime = "nodejs";
 
 export async function POST(req) {
@@ -8,12 +10,42 @@ export async function POST(req) {
     const filename = formData.get("filename");
     const timestamp = formData.get("timestamp");
 
+    // Busy check and the "receiving" claim below run in one synchronous
+    // block (no await between), so two near-simultaneous requests can't
+    // both pass. A rejected request must not touch the in-progress run's
+    // status — which is also why this check precedes the no-image branch
+    // and its error status update.
+    if (isBusy()) {
+      return Response.json(
+        {
+          success: false,
+          message: "A screenshot is already being processed. Please wait.",
+        },
+        { status: 409 }
+      );
+    }
+
     if (!imageFile) {
+      updateStatus({
+        stage: "error",
+        message: "No image received",
+        error: "No image file provided",
+      });
       return Response.json(
         { success: false, message: "No image file provided" },
         { status: 400 }
       );
     }
+
+    updateStatus({
+      stage: "receiving",
+      message: "Screenshot received, extracting text...",
+      filename,
+      timestamp,
+      imageId,
+      data: null,
+      error: null,
+    });
 
     console.log(`✓ Received file: ${filename}, image_id: ${imageId}`);
 
@@ -23,6 +55,7 @@ export async function POST(req) {
     const base64Image = buffer.toString("base64");
 
     console.log("📄 Extracting text using OCR.space (FREE)...");
+    updateStatus({ stage: "ocr", message: "Extracting text via OCR..." });
 
     // OCR.space API call with API key
     const ocrFormData = new FormData();
@@ -42,14 +75,14 @@ export async function POST(req) {
 
     // Check if the response is valid
     if (!ocrData || ocrData.IsErroredOnProcessing === true) {
+      const ocrError =
+        ocrData?.ErrorMessage || ocrData?.ErrorDetails || "Unknown OCR error";
+      updateStatus({ stage: "error", message: "OCR failed", error: ocrError });
       return Response.json(
         {
           success: false,
           message: "OCR failed",
-          error:
-            ocrData?.ErrorMessage ||
-            ocrData?.ErrorDetails ||
-            "Unknown OCR error",
+          error: ocrError,
           ocrResponse: ocrData,
         },
         { status: 500 }
@@ -60,6 +93,11 @@ export async function POST(req) {
     const extractedText = ocrData.ParsedResults?.[0]?.ParsedText?.trim() || "";
 
     if (!extractedText) {
+      updateStatus({
+        stage: "error",
+        message: "No text extracted from image",
+        error: "No text extracted",
+      });
       return Response.json(
         {
           success: false,
@@ -72,6 +110,7 @@ export async function POST(req) {
 
     console.log("✓ Text extracted successfully");
     console.log("🤖 Sending extracted text to AI API...");
+    updateStatus({ stage: "ai", message: "Asking AI for an answer..." });
 
     const aiResponse = await fetch(new URL("/api/ai", req.url), {
       method: "POST",
@@ -111,6 +150,23 @@ ${extractedText}
 
     const aiData = await aiResponse.json();
 
+    if (!aiData.success) {
+      const aiError =
+        (typeof aiData.error === "string" && aiData.error) ||
+        aiData.error?.message ||
+        "Unknown AI error";
+      updateStatus({ stage: "error", message: "AI request failed", error: aiError });
+      return Response.json(
+        {
+          success: false,
+          message: "AI request failed",
+          error: aiError,
+          received: { filename, timestamp, imageId, extractedText },
+        },
+        { status: 502 }
+      );
+    }
+
     if (!global.aiResponses) global.aiResponses = [];
     const responseData = {
       ...aiData,
@@ -122,6 +178,7 @@ ${extractedText}
 
     global.aiResponses.push(responseData);
     global.lastAIResponse = responseData;
+    updateStatus({ stage: "done", message: "Response ready", data: responseData });
 
     return Response.json(
       {
@@ -141,6 +198,11 @@ ${extractedText}
     );
   } catch (err) {
     console.error("❌ Error:", err);
+    updateStatus({
+      stage: "error",
+      message: "Unexpected server error",
+      error: err.message,
+    });
     return Response.json(
       {
         success: false,

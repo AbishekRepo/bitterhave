@@ -18,6 +18,10 @@ API_ENDPOINT = "http://localhost:3000/api/upload"  # Change this to your API URL
 API_KEY = ""  # Optional: Add your API key if needed
 SEND_TO_API = True  # Set to False to disable API uploads
 
+# Hotkey (avoid F12: it opens browser dev tools). `keyboard` module syntax.
+HOTKEY = "f8"
+HOTKEY_LABEL = "F8"
+
 # Create the folder if it doesn't exist
 if not os.path.exists(SCREENSHOT_FOLDER):
     os.makedirs(SCREENSHOT_FOLDER)
@@ -25,12 +29,13 @@ if not os.path.exists(SCREENSHOT_FOLDER):
 # Global state
 hotkey_active = True
 icon = None
+upload_in_progress = threading.Event()
 
 def upload_to_api(image, filename):
     """Upload image to API via POST request"""
     if not SEND_TO_API:
         return
-    
+
     try:
         # Generate unique ID for the image
         image_id = str(uuid.uuid4())
@@ -71,31 +76,40 @@ def upload_to_api(image, filename):
         # Check response
         if response.status_code == 200 or response.status_code == 201:
             print(f"✓ Screenshot uploaded successfully: {filename} (ID: {image_id})")
+        elif response.status_code == 409:
+            print(f"✗ Server busy processing a previous screenshot: {filename}")
         else:
             print(f"✗ Upload failed: {response.status_code} - {response.text}")
-    
+
     except requests.exceptions.Timeout:
         print(f"✗ API request timeout for {filename}")
     except requests.exceptions.RequestException as e:
         print(f"✗ API request error for {filename}: {str(e)}")
     except Exception as e:
         print(f"✗ Unexpected error: {str(e)}")
+    finally:
+        upload_in_progress.clear()
 
 def take_screenshot():
     """Capture screenshot and upload to API"""
     if not hotkey_active:
         return
-    
+
+    if upload_in_progress.is_set():
+        print("⏳ Previous screenshot still processing — ignored")
+        return
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"screenshot_{timestamp}.png"
     filepath = os.path.join(SCREENSHOT_FOLDER, filename)
-    
+
     # Capture screenshot
     screenshot = ImageGrab.grab()
     screenshot.save(filepath)
-    
+
     # Upload to API in a separate thread to avoid blocking
     if SEND_TO_API:
+        upload_in_progress.set()
         threading.Thread(target=upload_to_api, args=(screenshot, filename), daemon=True).start()
 
 def create_icon_image():
@@ -131,7 +145,7 @@ def setup_tray_icon():
     
     # Create menu
     menu = pystray.Menu(
-        item('Screenshot Hotkey (F12)', lambda: None, enabled=False),
+        item(f'Screenshot Hotkey ({HOTKEY_LABEL})', lambda: None, enabled=False),
         item('Toggle Hotkey', toggle_hotkey, default=True, checked=lambda item: hotkey_active),
         item('Open Screenshots Folder', open_folder),
         item('Quit', quit_app)
@@ -139,15 +153,14 @@ def setup_tray_icon():
      
     # Create icon
     icon_image = create_icon_image()
-    icon = pystray.Icon("screenshot_tool", icon_image, "Screenshot Tool - F12", menu)
+    icon = pystray.Icon("screenshot_tool", icon_image, f"Screenshot Tool - {HOTKEY_LABEL}", menu)
     
     # Run icon (this blocks)
     icon.run()
 
 def main():
     """Main function"""
-    # Register hotkey - using F12 (change if needed)
-    keyboard.add_hotkey('f12', take_screenshot)
+    keyboard.add_hotkey(HOTKEY, take_screenshot)
     
     # Start system tray icon in main thread (runs silently)
     setup_tray_icon()

@@ -4,7 +4,7 @@ A simple and efficient screenshot utility that runs in your system tray. Take sc
 
 ## Features
 
-- Quick screenshots with F12 hotkey
+- Quick screenshots with the F8 hotkey
 - System tray icon with easy controls
 - Automatic screenshot naming with timestamps
 - Toggle screenshot functionality on/off
@@ -23,7 +23,7 @@ pip install pystray
 
 ### Package Details
 
-- `keyboard`: For handling keyboard inputs and hotkeys (F12 screenshot trigger)
+- `keyboard`: For handling keyboard inputs and hotkeys (F8 screenshot trigger)
 - `Pillow`: Python Imaging Library for image processing and screenshot capture
 - `pystray`: For creating system tray icons and menu interface
 
@@ -33,11 +33,11 @@ pip install pystray
 2. Install the required packages using the pip commands above
 3. Run the script: `python screen_index.py`
 4. Look for the camera icon in your system tray
-5. Press F12 to take a screenshot at any time
+5. Press F8 to take a screenshot at any time
 
 ### System Tray Features
 
-- **Screenshot Hotkey (F12)**: Displays the current hotkey
+- **Screenshot Hotkey (F8)**: Displays the current hotkey
 - **Toggle Hotkey**: Enable/disable the screenshot functionality
 - **Open Screenshots Folder**: Quick access to your saved screenshots
 - **Quit**: Exit the application
@@ -50,4 +50,4 @@ Screenshots are automatically saved in `D:\my-screenshots` with timestamps in th
 2. Install dependencies
 3. Run the script
 4. The tool will create the screenshots folder if it doesn't exist
-5. Use F12 to take screenshots!
+5. Use F8 to take screenshots!
